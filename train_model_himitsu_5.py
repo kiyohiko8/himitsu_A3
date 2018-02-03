@@ -15,6 +15,18 @@ import collected_himitsu_data_5
 import collected_himitsu_sort
 
 
+#評価計算（F1値）
+def f1_score(y_true, y_pred):
+    pre = precision_score(y_true, y_pred)
+    rec = recall_score(y_true, y_pred)
+    return 2 * pre * rec / (pre + rec)
+
+#再現率の計算    
+def recall_score(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    recall = true_positives / (possible_positives + K.epsilon())
+    return recall
 
 
 """基本データの読み込み"""
@@ -74,7 +86,7 @@ model.add(Activation("relu"))
 model.add(Dense(output_dim = out_num))
 model.add(Activation("sigmoid"))
 
-model.compile(loss="binary_crossentropy", optimizer=SGD(lr=0.1), metrics=['accuracy'])
+model.compile(loss="binary_crossentropy", optimizer=SGD(lr=0.1), metrics=['accuracy', recall_score])
 
 """交差検証"""
 
@@ -91,16 +103,16 @@ for train_idx, val_idx in kf.split(X=x_data, y=y_data):
 	history = model.fit(train_x, train_t, nb_epoch = epoch_num, batch_size=batch_size)
 	#評価
 	score = model.evaluate(val_x, val_t, verbose=0)
-	acc = score[1]
+	recall = score[2]
 
 	##評価値をリストに追加
-	accuracy.append(acc)
+	accuracy.append(recall)
 	##今回の評価値を足す
-	sum_accuracy += acc
-print('accuracy : {}'.format(accuracy))
+	sum_accuracy += recall
+print('f1 : {}'.format(accuracy))
 # 5回分の評価値の平均
 sum_accuracy /= 5
-print('Kfold accuracy: {}'.format(sum_accuracy))
+print('Kfold F1: {}'.format(sum_accuracy))
 
 
 
